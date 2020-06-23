@@ -1,0 +1,42 @@
+[
+  {
+    "id": 1261481,
+    "name": "New Delhi",
+    "country": "IN"
+  },
+  {
+    "id": 1185241,
+    "name": "Dhaka",
+    "country": "BD"
+  },
+  {
+    "id": 5056033,
+    "name": "London",
+    "country": "US"
+  },
+  {
+    "id": 1275004,
+    "name": "Kolkata",
+    "country": "IN"
+  },
+  {
+    "id": 108410,
+    "name": "Riyadh",
+    "country": "SA"
+  },
+  {
+    "id": 292968,
+    "name": "Abu Dhabi",
+    "country": "AE"
+  },
+  {
+    "id": 5128638,
+    "name": "New York",
+    "country": "US"
+  },
+  {
+    "id": 1850147,
+    "name": "Tokyo",
+    "country": "JP"
+  }
+]
