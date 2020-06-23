@@ -38,13 +38,14 @@ dependencies {
     // dagger2
     api 'com.google.dagger:dagger:2.27'
     api 'com.google.dagger:dagger-android:2.27'
-    api 'com.google.dagger:dagger-android-support:2.27' // for support libraries
+    api 'com.google.dagger:dagger-android-support:2.27'
+    implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'// for support libraries
     kapt 'com.google.dagger:dagger-android-processor:2.27'
     kapt 'com.google.dagger:dagger-compiler:2.27'
-// network call related libraries
+    // network call related libraries
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
-// image loading libraries
+    // image loading libraries
     implementation 'com.github.bumptech.glide:glide:4.11.0'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.11.0'
 
