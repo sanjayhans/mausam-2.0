@@ -1,42 +1,12 @@
 [
   {
+    "id": 1261481,
+    "name": "New Delhi",
+    "country": "IN"
+  },
+  {
     "id": 1185241,
     "name": "Dhaka",
-    "country": "BD"
-  },
-  {
-    "id": 1336135,
-    "name": "Khulna",
-    "country": "BD"
-  },
-  {
-    "id": 1337200,
-    "name": "Chittagong",
-    "country": "BD"
-  },
-  {
-    "id": 1336134,
-    "name": "Coxs Bazar",
-    "country": "BD"
-  },
-  {
-    "id": 1185128,
-    "name": "Rajshahi",
-    "country": "BD"
-  },
-  {
-    "id": 1336137,
-    "name": "Barisal",
-    "country": "BD"
-  },
-  {
-    "id": 1185099,
-    "name": "Sylhet",
-    "country": "BD"
-  },
-  {
-    "id": 1185188,
-    "name": "Rangpur",
     "country": "BD"
   },
   {
@@ -68,15 +38,5 @@
     "id": 1850147,
     "name": "Tokyo",
     "country": "JP"
-  },
-  {
-    "id": 1176615,
-    "name": "Islamabad",
-    "country": "PK"
-  },
-  {
-    "id": 1261481,
-    "name": "New Delhi",
-    "country": "IN"
   }
 ]
