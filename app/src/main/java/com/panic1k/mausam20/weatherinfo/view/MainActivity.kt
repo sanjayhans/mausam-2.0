@@ -1,7 +1,6 @@
 package com.panic1k.mausam20.weatherinfo.view
 
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Toast
@@ -14,6 +13,7 @@ import com.panic1k.mausam20.utils.convertToListOfCityName
 import com.panic1k.mausam20.weatherinfo.model.WeatherInfoModel
 import com.panic1k.mausam20.weatherinfo.model.WeatherInfoModelImpl
 import com.panic1k.mausam20.weatherinfo.model.repo.City
+import com.panic1k.mausam20.weatherinfo.model.repo.WeatherData
 import com.panic1k.mausam20.weatherinfo.viewmodel.WeatherInfoViewModel
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.layout_sunrise_sunset.*
@@ -23,7 +23,7 @@ import kotlinx.android.synthetic.main.layout_weather_info.*
 
 class MainActivity : AppCompatActivity() {
 
-    private val model: WeatherInfoModel = WeatherInfoModelImpl(this)
+    private lateinit var model: WeatherInfoModel
     private lateinit var viewModel: WeatherInfoViewModel
     private var cityList: MutableList<City> = mutableListOf()
 
@@ -32,28 +32,57 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         // initialize ViewModel
+        model = WeatherInfoModelImpl(applicationContext)
         viewModel = ViewModelProviders.of(this).get(WeatherInfoViewModel::class.java)
+
+        // set LiveData and View click listeners before the call for data fetching
+        setLiveDataListeners()
+        setViewClickListener()
 
         // fetch city list when Activity open
         viewModel.getCityList(model)
+    }
 
-        // observe city list success data
-        viewModel.cityListLiveData.observe(this, Observer { cityList ->
-            this.cityList = cityList
-            val arrayAdapter = ArrayAdapter(
-                this,
-                R.layout.support_simple_spinner_dropdown_item,
-                cityList.convertToListOfCityName()
-            )
-            spinner.adapter = arrayAdapter
+    private fun setViewClickListener() {
+        // View Weather button click listener
+        btn_view_weather.setOnClickListener {
+            val selectedCityId = cityList[spinner.selectedItemPosition].id
+            viewModel.getWeatherInfo(selectedCityId, model) // fetch weather info
+        }
+    }
+
+    private fun setLiveDataListeners() {
+
+        /**
+         * When ViewModel PUSH city list to LiveData then this `onChanged()`‍ method will be called.
+         * Here we subscribe the LiveData of City list. We don't pull city list from ViewModel.
+         * We subscribe to the data source for city list. When LiveData of city list is updated
+         * inside ViewModel, below onChanged() method will triggered instantly.
+         * City list is fetching from a small local JSON file. So we don't need any ProgressBar here.
+         */
+        viewModel.cityListLiveData.observe(this, object : Observer<MutableList<City>> {
+            override fun onChanged(cities: MutableList<City>) {
+                setCityListSpinner(cities)
+            }
         })
 
-        // observe city list fetching failure
-        viewModel.weatherInfoFailureLiveData.observe(this, Observer { errorMessage ->
+        /**
+         * If ViewModel failed to fetch City list from data source, this LiveData will be triggered.
+         * I know it's not good to make separate LiveData both for Success and Failure, but for sake
+         * of simplification I did it. We can handle all of our errors from our Activity or Fragment
+         * Base classes. Another way is: using a Generic wrapper class where you can set the success
+         * or failure status for any types of data model.
+         */
+        viewModel.cityListFailureLiveData.observe(this, Observer { errorMessage ->
             Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show()
         })
 
-        // observe progress bar show/hide
+        /**
+         * ProgressBar visibility will be handled by this LiveData. ViewModel decides when Activity
+         * should show ProgressBar and when hide.
+         *
+         * Here I've used lambda expression to implement Observer interface in second parameter.
+         */
         viewModel.progressBarLiveData.observe(this, Observer { isShowLoader ->
             if (isShowLoader)
                 progressBar.visibility = View.VISIBLE
@@ -61,37 +90,61 @@ class MainActivity : AppCompatActivity() {
                 progressBar.visibility = View.GONE
         })
 
-        // observe weather info fetching success
+        /**
+         * This method will be triggered when ViewModel successfully receive WeatherData from our
+         * data source (I mean Model). Activity just observing (subscribing) this LiveData for showing
+         * weather information on UI. ViewModel receives Weather data API response from Model via
+         * Callback method of Model. Then ViewModel apply some business logic and manipulate data.
+         * Finally ViewModel PUSH WeatherData to `weatherInfoLiveData`. After PUSHING into it, below
+         * method triggered instantly! Then we set the data on UI.
+         *
+         * Here I've used lambda expression to implement Observer interface in second parameter.
+         */
         viewModel.weatherInfoLiveData.observe(this, Observer { weatherData ->
-            Log.e("Weather Data", weatherData.toString())
-            output_group.visibility = View.VISIBLE
-            tv_error_message.visibility = View.GONE
-
-            tv_date_time?.text = weatherData.dateTime
-            tv_temperature?.text = weatherData.temperature
-            tv_city_country?.text = weatherData.cityAndCountry
-            Glide.with(this).load(weatherData.weatherConditionIconUrl).into(iv_weather_condition)
-            tv_weather_condition?.text = weatherData.weatherConditionIconDescription
-
-            tv_humidity_value?.text = weatherData.humidity
-            tv_pressure_value?.text = weatherData.pressure
-            tv_visibility_value?.text = weatherData.visibility
-
-            tv_sunrise_time?.text = weatherData.sunrise
-            tv_sunset_time?.text = weatherData.sunset
+            setWeatherInfo(weatherData)
         })
 
-        // observe weather info fetching failure
+        /**
+         * If ViewModel faces any error during Weather Info fetching API call by Model, then PUSH the
+         * error message into `weatherInfoFailureLiveData`. After that, this method will be triggered.
+         * Then we will hide the output view and show error message on UI.
+         *
+         * Here I've used lambda expression to implement Observer interface in second parameter.
+         */
         viewModel.weatherInfoFailureLiveData.observe(this, Observer { errorMessage ->
-            Log.e("Weather Error", errorMessage)
             output_group.visibility = View.GONE
             tv_error_message.visibility = View.VISIBLE
             tv_error_message.text = errorMessage
         })
-        // fetch data when button clicked
-        btn_view_weather.setOnClickListener {
-            val selectedCityId = cityList[spinner.selectedItemPosition].id
-            viewModel.getWeatherInfo(selectedCityId, model)
-        }
+    }
+
+    private fun setCityListSpinner(cityList: MutableList<City>) {
+        this.cityList = cityList
+
+        val arrayAdapter = ArrayAdapter(
+            this,
+            R.layout.support_simple_spinner_dropdown_item,
+            this.cityList.convertToListOfCityName()
+        )
+
+        spinner.adapter = arrayAdapter
+    }
+
+    private fun setWeatherInfo(weatherData: WeatherData) {
+        output_group.visibility = View.VISIBLE
+        tv_error_message.visibility = View.GONE
+
+        tv_date_time?.text = weatherData.dateTime
+        tv_temperature?.text = weatherData.temperature
+        tv_city_country?.text = weatherData.cityAndCountry
+        Glide.with(this).load(weatherData.weatherConditionIconUrl).into(iv_weather_condition)
+        tv_weather_condition?.text = weatherData.weatherConditionIconDescription
+
+        tv_humidity_value?.text = weatherData.humidity
+        tv_pressure_value?.text = weatherData.pressure
+        tv_visibility_value?.text = weatherData.visibility
+
+        tv_sunrise_time?.text = weatherData.sunrise
+        tv_sunset_time?.text = weatherData.sunset
     }
 }
